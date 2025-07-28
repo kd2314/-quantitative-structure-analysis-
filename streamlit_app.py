@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import qstock as qs
+import akshare as ak
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import warnings
@@ -61,25 +61,30 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 指数配置
+# 指数配置 - 使用akshare要求的完整代码格式
 INDICES_CONFIG = {
-    "上证指数 (000001.SH)": "000001",
-    "深证成指 (399001.SZ)": "399001", 
-    "创业板指 (399006.SZ)": "399006",
-    "沪深300 (000300.SH)": "000300",
-    "中证500 (000905.SH)": "000905",
-    "中证1000 (000852.SH)": "000852",
-    "中证2000 (000680.SH)": "000680",
-    "中证1000ETF (000985.SH)": "000985"
+    "上证指数 (000001.SH)": "sh000001",
+    "深证成指 (399001.SZ)": "sz399001", 
+    "创业板指 (399006.SZ)": "sz399006",
+    "沪深300 (000300.SH)": "sh000300",
+    "中证500 (000905.SH)": "sh000905",
+    "中证1000 (000852.SH)": "sh000852",
+    "中证2000 (000680.SH)": "sh000680",
+    "中证1000ETF (000985.SH)": "sh000985"
 }
 
 def get_latest_data_info():
     """获取最新数据信息"""
     try:
         # 尝试获取一个指数的数据来检查最新日期
-        test_df = qs.get_index_data("000001", start="20240101", end=datetime.now().strftime('%Y%m%d'))
+        import akshare as ak
+        test_df = ak.stock_zh_index_daily(symbol="sh000001")
         if not test_df.empty:
-            latest_date = test_df.index[-1].strftime('%Y-%m-%d')
+            # 检查是否有date列
+            if 'date' in test_df.columns:
+                latest_date = test_df['date'].iloc[-1].strftime('%Y-%m-%d')
+            else:
+                latest_date = test_df.index[-1].strftime('%Y-%m-%d')
             return f"最新数据截止至{latest_date},正在尝试补充当日数据..."
         else:
             return "数据获取中..."

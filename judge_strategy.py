@@ -1,31 +1,55 @@
 import pandas as pd
 import numpy as np
-import qstock as qs
+import akshare as ak
 import matplotlib.pyplot as plt
-from datetime import datetime
+from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
 def get_stock_data(stock_code):
     """获取股票数据"""
     try:
-        start_date = "20240901"
-        end_date = datetime.now().strftime('%Y%m%d')
-        df = qs.get_index_data(stock_code, start=start_date, end=end_date)
-        df = df.rename(columns={
-            '收盘': 'close',
-            '开盘': 'open',
-            '最高': 'high',
-            '最低': 'low',
-            '成交量': 'volume',
-            '日期': 'date'
-        })
+        # 计算开始日期（一年前）
+        start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        
+        # 使用akshare获取指数数据
+        df = ak.stock_zh_index_daily(symbol=stock_code)
+        
+        if df is None or df.empty:
+            print(f"无法获取股票 {stock_code} 的数据")
+            return None
+        
+        # 确保date列存在并转换为日期格式
         if 'date' in df.columns:
-            df.set_index('date', inplace=True)
+            df['date'] = pd.to_datetime(df['date'])
+        else:
+            # 如果没有date列，使用索引作为日期
+            df['date'] = pd.to_datetime(df.index)
+        
+        # 过滤日期范围
+        df = df[(df['date'] >= start_date) & (df['date'] <= end_date)]
+        
+        if df.empty:
+            print(f"过滤后数据为空，请检查日期范围")
+            return None
+        
+        # 设置date为索引
+        df.set_index('date', inplace=True)
+        
+        # 确保所有必需的列都存在
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        for col in required_columns:
+            if col not in df.columns:
+                print(f"缺少必需的列: {col}")
+                return None
+        
+        print(f"成功获取 {stock_code} 数据，共 {len(df)} 条记录")
         return df
+        
     except Exception as e:
         print(f"获取股票数据时出错: {e}")
-        print("请确保输入的股票代码格式正确，例如：'000001'或'600000'")
+        print("请确保输入的股票代码格式正确")
         return None
 
 def EMA(series, periods):
@@ -535,7 +559,7 @@ def plot_macd_system_new(df, stock_code):
     plt.close()
 
 def main():
-    stock_code = input("请输入股票代码（例如：000001）：")
+    stock_code = input("请输入股票代码（例如：sh000001）：")
     df = get_stock_data(stock_code)
     if df is None:
         return
