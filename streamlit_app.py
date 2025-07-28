@@ -67,6 +67,7 @@ INDICES_CONFIG = {
     "深证成指 (399001.SZ)": "sz399001", 
     "创业板指 (399006.SZ)": "sz399006",
     "沪深300 (000300.SH)": "sh000300",
+    "上证50 (000016.SH)": "sh000016",
     "中证500 (000905.SH)": "sh000905",
     "中证1000 (000852.SH)": "sh000852",
     "中证2000 (000680.SH)": "sh000680",
@@ -93,9 +94,29 @@ def get_latest_data_info():
 
 def plot_macd_analysis_streamlit(df, stock_code, analysis_period):
     """为Streamlit优化的MACD分析图表"""
-    # 设置中文字体
-    plt.rcParams['font.sans-serif'] = ['SimHei']
-    plt.rcParams['axes.unicode_minus'] = False
+    # 设置中文字体 - 使用更兼容的字体
+    import matplotlib.font_manager as fm
+    
+    # 尝试设置中文字体，按优先级尝试
+    font_options = ['SimHei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'DejaVu Sans']
+    font_found = False
+    
+    for font in font_options:
+        try:
+            plt.rcParams['font.sans-serif'] = [font]
+            plt.rcParams['axes.unicode_minus'] = False
+            # 测试字体是否可用
+            test_font = fm.FontProperties(family=font)
+            if test_font.get_name() != 'DejaVu Sans':
+                font_found = True
+                break
+        except:
+            continue
+    
+    # 如果没有找到中文字体，使用默认字体
+    if not font_found:
+        plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+        plt.rcParams['axes.unicode_minus'] = False
     
     # 创建图表
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 10), height_ratios=[1, 1.5])
@@ -121,13 +142,13 @@ def plot_macd_analysis_streamlit(df, stock_code, analysis_period):
         sell_y = sell_signals['close'].values
         ax1.scatter(sell_x, sell_y, color='green', marker='v', s=100, zorder=5, label='卖出信号')
     
-    # 设置x轴标签
-    date_labels = df.index.strftime('%y-%m')
-    step = max(1, len(df) // 20)
+    # 设置x轴标签 - 优化显示
+    date_labels = df.index.strftime('%m-%d')
+    step = max(1, len(df) // 15)  # 减少标签数量
     ax1.set_xticks(x_index[::step])
-    ax1.set_xticklabels(date_labels[::step], rotation=45)
+    ax1.set_xticklabels(date_labels[::step], rotation=45, fontsize=8)
     
-    ax1.legend(loc='upper left')
+    ax1.legend(loc='upper left', fontsize=9)
     ax1.grid(True, alpha=0.3)
     
     # 绘制MACD
@@ -154,12 +175,12 @@ def plot_macd_analysis_streamlit(df, stock_code, analysis_period):
             ax2.scatter(x_pos, df.loc[idx, 'DIF'], color='green', marker='v', s=100, zorder=5)
     
     # 设置图例
-    ax2.legend(loc='upper left', ncol=3)
+    ax2.legend(loc='upper left', ncol=3, fontsize=9)
     ax2.grid(True, alpha=0.3)
     
     # 设置x轴标签
     ax2.set_xticks(x_index[::step])
-    ax2.set_xticklabels(date_labels[::step], rotation=45)
+    ax2.set_xticklabels(date_labels[::step], rotation=45, fontsize=8)
     
     plt.tight_layout()
     return fig
@@ -194,7 +215,7 @@ def main():
         selected_index = st.selectbox(
             "选择指数",
             list(INDICES_CONFIG.keys()),
-            index=5  # 默认选择中证1000
+            index=3  # 默认选择沪深300
         )
     
     with col2:
