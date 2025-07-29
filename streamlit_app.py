@@ -74,7 +74,8 @@ INDICES_CONFIG = {
     "上证50 (000016.SH)": "sh000016",
     "中证500 (000905.SH)": "sh000905",
     "中证1000 (000852.SH)": "sh000852",
-    "中证2000 (000680.SH)": "sh000680",
+    "中证2000 (932000.SH)": "sh932000",
+    "科创综指 (000680.SH)": "sh000680",
     "中证1000ETF (000985.SH)": "sh000985"
 }
 
@@ -291,6 +292,15 @@ def main():
                     export_df['TG'] = export_df['TG'].astype(int)  # True->1, False->0
                 if 'BG' in export_df.columns:
                     export_df['BG'] = -export_df['BG'].astype(int)  # True->-1, False->0
+                
+                # 重命名列
+                column_mapping = {
+                    'TG': '顶结构',
+                    'BG': '底结构',
+                    'TG_数值': '顶结构_数值',
+                    'BG_数值': '底结构_数值'
+                }
+                export_df = export_df.rename(columns=column_mapping)
                 
                 # 格式化数值列
                 if 'close' in export_df.columns:
