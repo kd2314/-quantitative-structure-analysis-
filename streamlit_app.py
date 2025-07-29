@@ -175,7 +175,7 @@ def main():
             progress_bar.progress(100)
             
             # 显示关键指标
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3, col4, col5, col6 = st.columns(6)
             
             with col1:
                 st.metric("当前DIF", f"{df['DIF'].iloc[-1]:.3f}")
@@ -192,13 +192,35 @@ def main():
                 change_pct = ((latest_close - prev_close) / prev_close) * 100
                 st.metric("收盘价", f"{latest_close:.2f}", f"{change_pct:+.2f}%")
             
+            with col5:
+                # 显示TG值
+                tg_value = df['TG_数值'].iloc[-1] if 'TG_数值' in df.columns else 0
+                tg_color = "red" if tg_value == 1 else "gray"
+                st.markdown(f"""
+                <div style="text-align: center; padding: 10px; border: 2px solid {tg_color}; border-radius: 5px;">
+                    <div style="font-size: 14px; color: #666;">TG值</div>
+                    <div style="font-size: 24px; font-weight: bold; color: {tg_color};">{tg_value}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col6:
+                # 显示BG值
+                bg_value = df['BG_数值'].iloc[-1] if 'BG_数值' in df.columns else 0
+                bg_color = "green" if bg_value == -1 else "gray"
+                st.markdown(f"""
+                <div style="text-align: center; padding: 10px; border: 2px solid {bg_color}; border-radius: 5px;">
+                    <div style="font-size: 14px; color: #666;">BG值</div>
+                    <div style="font-size: 24px; font-weight: bold; color: {bg_color};">{bg_value}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
             # 数据表格显示
             st.subheader("详细数据")
             
             # 选择要显示的列
             display_columns = [
                 'close', 'DIF', 'DEA', 'MACD',
-                '低位金叉', '二次金叉', 'TG', 'BG',
+                '低位金叉', '二次金叉', 'TG', 'BG', 'TG_数值', 'BG_数值', 'TG_BG_综合',
                 '直接顶背离', '隔峰顶背离', '直接底背离', '隔峰底背离',
                 '主升'
             ]
@@ -246,7 +268,7 @@ def main():
                 # 选择要导出的列
                 export_columns = [
                     'close', 'DIF', 'DEA', 'MACD',
-                    '低位金叉', '二次金叉', 'TG', 'BG',
+                    '低位金叉', '二次金叉', 'TG', 'BG', 'TG_数值', 'BG_数值', 'TG_BG_综合',
                     '直接顶背离', '隔峰顶背离', '直接底背离', '隔峰底背离',
                     '主升', 'DIF顶转折', 'DIF底转折'
                 ]

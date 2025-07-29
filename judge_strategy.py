@@ -314,6 +314,11 @@ def calculate_macd_indicators_new(df):
     df['隔峰BG'] = (df['DIF底转折'] & df['隔峰底背离'].shift(1) & (df['DIF'] < 0))
     df['BG'] = df['直接BG'] | df['隔峰BG']
     
+    # 将TG和BG转换为数值：TG=True时为1，BG=True时为-1，其他为0
+    df['TG_数值'] = df['TG'].astype(int)
+    df['BG_数值'] = -df['BG'].astype(int)
+    df['TG_BG_综合'] = df['TG_数值'] + df['BG_数值']  # 1表示顶结构，-1表示底结构，0表示无信号
+    
     # 修改后的背离消失条件
     df['直接顶背离消失'] = (df['直接顶背离'].shift(1) & (df['MDIFH1'] > df['MDIFH2']))
     df['隔峰顶背离消失'] = (df['隔峰顶背离'].shift(1) & (df['MDIFH1'] > df['MDIFH3']))
