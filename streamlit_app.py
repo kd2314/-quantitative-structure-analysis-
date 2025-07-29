@@ -2,11 +2,10 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import akshare as ak
-import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import warnings
 import os
-from judge_strategy import get_stock_data, calculate_macd_indicators_new, plot_macd_system_new
+from judge_strategy import get_stock_data, calculate_macd_indicators_new
 
 # 设置缓存
 @st.cache_data(ttl=3600)  # 缓存1小时
@@ -48,12 +47,7 @@ st.markdown("""
         margin: 1rem 0;
     }
     
-    .chart-container {
-        background-color: #f8f9fa;
-        border-radius: 10px;
-        padding: 1rem;
-        margin: 1rem 0;
-    }
+
     
     .sidebar .sidebar-content {
         background-color: #f8f9fa;
@@ -102,100 +96,7 @@ def get_latest_data_info():
     except:
         return "数据获取中..."
 
-def plot_macd_analysis_streamlit(df, stock_code, analysis_period):
-    """为Streamlit优化的MACD分析图表"""
-    # 设置中文字体 - 改进字体兼容性
-    import matplotlib.font_manager as fm
-    
-    # 强制设置中文字体
-    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'Arial Unicode MS', 'DejaVu Sans']
-    plt.rcParams['axes.unicode_minus'] = False
-    
-    # 尝试设置中文字体，按优先级尝试
-    font_options = ['SimHei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'Arial Unicode MS', 'DejaVu Sans']
-    font_found = False
-    
-    for font in font_options:
-        try:
-            test_font = fm.FontProperties(family=font)
-            if test_font.get_name() != 'DejaVu Sans':
-                font_found = True
-                selected_font = font
-                break
-        except:
-            continue
-    
-    # 如果没有找到中文字体，使用默认字体并添加字体回退
-    if not font_found:
-        selected_font = 'DejaVu Sans'
-    
-    # 创建图表
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 10), height_ratios=[1, 1.5])
-    
-    # 创建连续的数字索引
-    x_index = range(len(df))
-    
-    # 绘制K线图
-    ax1.plot(x_index, df['close'], label='收盘价', color='blue', linewidth=1)
-    ax1.set_title(f'{stock_code} 定量结构公式分析', fontsize=14, 
-                  fontproperties=fm.FontProperties(family=selected_font))
-    
-    # 添加买卖信号到价格图
-    buy_signals = df[df['低位金叉'] | df['二次金叉']]
-    sell_signals = df[df['TG']]
-    
-    if not buy_signals.empty:
-        buy_x = [x_index[df.index.get_loc(idx)] for idx in buy_signals.index]
-        buy_y = buy_signals['close'].values
-        ax1.scatter(buy_x, buy_y, color='red', marker='^', s=100, zorder=5, label='买入信号')
-    
-    if not sell_signals.empty:
-        sell_x = [x_index[df.index.get_loc(idx)] for idx in sell_signals.index]
-        sell_y = sell_signals['close'].values
-        ax1.scatter(sell_x, sell_y, color='green', marker='v', s=100, zorder=5, label='卖出信号')
-    
-    # 设置x轴标签 - 优化显示
-    date_labels = df.index.strftime('%m-%d')
-    step = max(1, len(df) // 15)  # 减少标签数量
-    ax1.set_xticks(x_index[::step])
-    ax1.set_xticklabels(date_labels[::step], rotation=45, fontsize=8)
-    
-    ax1.legend(loc='upper left', fontsize=9, prop=fm.FontProperties(family=selected_font))
-    ax1.grid(True, alpha=0.3)
-    
-    # 绘制MACD
-    ax2.plot(x_index, df['DIF'], label='DIF线', color='blue', linewidth=1)
-    ax2.plot(x_index, df['DEA'], label='DEA线', color='orange', linewidth=1)
-    
-    # 绘制零轴线
-    ax2.axhline(y=0, color='gray', linestyle='--', alpha=0.5, label='零轴线')
-    
-    # 绘制MACD柱状图
-    colors = ['red' if x >= 0 else 'green' for x in df['MACD']]
-    ax2.bar(x_index, df['MACD'], color=colors, width=0.8, alpha=0.6, label='MACD柱')
-    
-    # 绘制买卖信号
-    for i, idx in enumerate(df.index):
-        x_pos = x_index[i]
-        
-        # 买入信号
-        if df.loc[idx, '低位金叉'] or df.loc[idx, '二次金叉']:
-            ax2.scatter(x_pos, df.loc[idx, 'DIF'], color='red', marker='^', s=100, zorder=5)
-        
-        # 卖出信号（顶背离确认）
-        if df.loc[idx, 'TG']:
-            ax2.scatter(x_pos, df.loc[idx, 'DIF'], color='green', marker='v', s=100, zorder=5)
-    
-    # 设置图例
-    ax2.legend(loc='upper left', ncol=3, fontsize=9, prop=fm.FontProperties(family=selected_font))
-    ax2.grid(True, alpha=0.3)
-    
-    # 设置x轴标签
-    ax2.set_xticks(x_index[::step])
-    ax2.set_xticklabels(date_labels[::step], rotation=45, fontsize=8)
-    
-    plt.tight_layout()
-    return fig
+
 
 def main():
     # 主标题
@@ -212,12 +113,7 @@ def main():
             index=0
         )
         
-        # 图表样式选择
-        chart_style = st.selectbox(
-            "图表样式",
-            ["标准样式", "暗色主题", "简洁样式"],
-            index=0
-        )
+
     
     # 主内容区域
     # 指数选择
@@ -262,11 +158,8 @@ def main():
             # 计算指标
             df = get_cached_macd_indicators(df)
             
-            status_text.text("正在生成图表...")
+            status_text.text("正在处理数据...")
             progress_bar.progress(75)
-            
-            # 显示图表
-            st.markdown('<div class="chart-container">', unsafe_allow_html=True)
             
             # 根据分析周期过滤数据
             if analysis_period == "最近30天":
@@ -277,12 +170,6 @@ def main():
                 df_display = df.tail(90)
             else:
                 df_display = df
-            
-            # 创建图表
-            fig = plot_macd_analysis_streamlit(df_display, selected_index, analysis_period)
-            st.pyplot(fig)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
             
             status_text.text("完成!")
             progress_bar.progress(100)
@@ -351,16 +238,11 @@ def main():
                 mime='text/csv'
             )
             
-            # 保存图表功能
+            # 保存Excel数据功能
             col1, col2 = st.columns(2)
             
             with col1:
-                if st.button("保存分析图表"):
-                    try:
-                        plot_macd_system_new(df, stock_code)
-                        st.success(f"图表已保存为: stock_{stock_code}_macd_chart_new.png")
-                    except Exception as e:
-                        st.error(f"保存图表时出错: {e}")
+                pass  # 预留位置，可以添加其他功能
             
             with col2:
                 if st.button("保存Excel数据"):
