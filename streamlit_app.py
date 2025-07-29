@@ -252,7 +252,14 @@ def main():
             st.dataframe(formatted_df, use_container_width=True)
             
             # 下载数据功能
-            csv = df[available_columns].to_csv(index=True)
+            # 创建CSV数据框并转换TG和BG
+            csv_df = df[available_columns].copy()
+            if 'TG' in csv_df.columns:
+                csv_df['TG'] = csv_df['TG'].astype(int)  # True->1, False->0
+            if 'BG' in csv_df.columns:
+                csv_df['BG'] = -csv_df['BG'].astype(int)  # True->-1, False->0
+            
+            csv = csv_df.to_csv(index=True)
             st.download_button(
                 label="下载完整数据 (CSV)",
                 data=csv,
@@ -278,6 +285,12 @@ def main():
                 
                 # 创建要导出的数据框
                 export_df = df[available_export_columns].copy()
+                
+                # 转换TG和BG为数值
+                if 'TG' in export_df.columns:
+                    export_df['TG'] = export_df['TG'].astype(int)  # True->1, False->0
+                if 'BG' in export_df.columns:
+                    export_df['BG'] = -export_df['BG'].astype(int)  # True->-1, False->0
                 
                 # 格式化数值列
                 if 'close' in export_df.columns:
