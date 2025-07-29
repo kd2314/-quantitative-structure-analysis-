@@ -238,66 +238,54 @@ def main():
                 mime='text/csv'
             )
             
-            # 保存Excel数据功能
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                pass  # 预留位置，可以添加其他功能
-            
-            with col2:
-                if st.button("保存Excel数据"):
-                    try:
-                        # 确保有openpyxl依赖
-                        try:
-                            import openpyxl
-                        except ImportError:
-                            st.error("缺少openpyxl依赖，请运行: pip install openpyxl")
-                            return
-                        
-                        excel_path = f'stock_{stock_code}_macd_analysis_new.xlsx'
-                        
-                        # 选择要导出的列
-                        export_columns = [
-                            'close', 'DIF', 'DEA', 'MACD',
-                            '低位金叉', '二次金叉', 'TG', 'BG',
-                            '直接顶背离', '隔峰顶背离', '直接底背离', '隔峰底背离',
-                            '主升', 'DIF顶转折', 'DIF底转折'
-                        ]
-                        
-                        # 过滤存在的列
-                        available_export_columns = [col for col in export_columns if col in df.columns]
-                        
-                        # 创建要导出的数据框
-                        export_df = df[available_export_columns].copy()
-                        
-                        # 格式化数值列
-                        if 'close' in export_df.columns:
-                            export_df['close'] = export_df['close'].round(2)
-                        if 'DIF' in export_df.columns:
-                            export_df['DIF'] = export_df['DIF'].round(3)
-                        if 'DEA' in export_df.columns:
-                            export_df['DEA'] = export_df['DEA'].round(3)
-                        if 'MACD' in export_df.columns:
-                            export_df['MACD'] = export_df['MACD'].round(3)
-                        
-                        # 保存到Excel
-                        export_df.to_excel(excel_path, engine='openpyxl')
-                        st.success(f"数据已保存为: {excel_path}")
-                        
-                        # 提供下载链接
-                        with open(excel_path, 'rb') as f:
-                            excel_data = f.read()
-                        
-                        st.download_button(
-                            label="下载Excel文件",
-                            data=excel_data,
-                            file_name=excel_path,
-                            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                        )
-                        
-                    except Exception as e:
-                        st.error(f"保存Excel时出错: {e}")
-                        st.error("请确保已安装openpyxl: pip install openpyxl")
+            # Excel下载功能
+            try:
+                # 确保有openpyxl依赖
+                import openpyxl
+                
+                # 选择要导出的列
+                export_columns = [
+                    'close', 'DIF', 'DEA', 'MACD',
+                    '低位金叉', '二次金叉', 'TG', 'BG',
+                    '直接顶背离', '隔峰顶背离', '直接底背离', '隔峰底背离',
+                    '主升', 'DIF顶转折', 'DIF底转折'
+                ]
+                
+                # 过滤存在的列
+                available_export_columns = [col for col in export_columns if col in df.columns]
+                
+                # 创建要导出的数据框
+                export_df = df[available_export_columns].copy()
+                
+                # 格式化数值列
+                if 'close' in export_df.columns:
+                    export_df['close'] = export_df['close'].round(2)
+                if 'DIF' in export_df.columns:
+                    export_df['DIF'] = export_df['DIF'].round(3)
+                if 'DEA' in export_df.columns:
+                    export_df['DEA'] = export_df['DEA'].round(3)
+                if 'MACD' in export_df.columns:
+                    export_df['MACD'] = export_df['MACD'].round(3)
+                
+                # 将数据转换为Excel格式的字节流
+                from io import BytesIO
+                output = BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    export_df.to_excel(writer, index=True, sheet_name='MACD分析数据')
+                excel_data = output.getvalue()
+                
+                # 提供Excel下载按钮
+                st.download_button(
+                    label="下载Excel数据",
+                    data=excel_data,
+                    file_name=f'{stock_code}_macd_analysis.xlsx',
+                    mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+                
+            except ImportError:
+                st.error("缺少openpyxl依赖，请运行: pip install openpyxl")
+            except Exception as e:
+                st.error(f"生成Excel文件时出错: {e}")
         
         except Exception as e:
             st.error(f"计算过程中出现错误: {e}")
