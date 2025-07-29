@@ -104,29 +104,30 @@ def get_latest_data_info():
 
 def plot_macd_analysis_streamlit(df, stock_code, analysis_period):
     """为Streamlit优化的MACD分析图表"""
-    # 设置中文字体 - 使用更兼容的字体
+    # 设置中文字体 - 改进字体兼容性
     import matplotlib.font_manager as fm
     
+    # 强制设置中文字体
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'Arial Unicode MS', 'DejaVu Sans']
+    plt.rcParams['axes.unicode_minus'] = False
+    
     # 尝试设置中文字体，按优先级尝试
-    font_options = ['SimHei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'DejaVu Sans', 'Arial Unicode MS']
+    font_options = ['SimHei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'Arial Unicode MS', 'DejaVu Sans']
     font_found = False
     
     for font in font_options:
         try:
-            plt.rcParams['font.sans-serif'] = [font]
-            plt.rcParams['axes.unicode_minus'] = False
-            # 测试字体是否可用
             test_font = fm.FontProperties(family=font)
             if test_font.get_name() != 'DejaVu Sans':
                 font_found = True
+                selected_font = font
                 break
         except:
             continue
     
     # 如果没有找到中文字体，使用默认字体并添加字体回退
     if not font_found:
-        plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial Unicode MS']
-        plt.rcParams['axes.unicode_minus'] = False
+        selected_font = 'DejaVu Sans'
     
     # 创建图表
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(16, 10), height_ratios=[1, 1.5])
@@ -136,7 +137,8 @@ def plot_macd_analysis_streamlit(df, stock_code, analysis_period):
     
     # 绘制K线图
     ax1.plot(x_index, df['close'], label='收盘价', color='blue', linewidth=1)
-    ax1.set_title(f'{stock_code} 定量结构公式分析', fontsize=14, fontproperties=fm.FontProperties(family='SimHei' if 'SimHei' in font_options else 'DejaVu Sans'))
+    ax1.set_title(f'{stock_code} 定量结构公式分析', fontsize=14, 
+                  fontproperties=fm.FontProperties(family=selected_font))
     
     # 添加买卖信号到价格图
     buy_signals = df[df['低位金叉'] | df['二次金叉']]
@@ -158,7 +160,7 @@ def plot_macd_analysis_streamlit(df, stock_code, analysis_period):
     ax1.set_xticks(x_index[::step])
     ax1.set_xticklabels(date_labels[::step], rotation=45, fontsize=8)
     
-    ax1.legend(loc='upper left', fontsize=9)
+    ax1.legend(loc='upper left', fontsize=9, prop=fm.FontProperties(family=selected_font))
     ax1.grid(True, alpha=0.3)
     
     # 绘制MACD
@@ -185,7 +187,7 @@ def plot_macd_analysis_streamlit(df, stock_code, analysis_period):
             ax2.scatter(x_pos, df.loc[idx, 'DIF'], color='green', marker='v', s=100, zorder=5)
     
     # 设置图例
-    ax2.legend(loc='upper left', ncol=3, fontsize=9)
+    ax2.legend(loc='upper left', ncol=3, fontsize=9, prop=fm.FontProperties(family=selected_font))
     ax2.grid(True, alpha=0.3)
     
     # 设置x轴标签
@@ -218,23 +220,18 @@ def main():
         )
     
     # 主内容区域
-    col1, col2 = st.columns([3, 1])
+    # 指数选择
+    selected_index = st.selectbox(
+        "选择指数",
+        list(INDICES_CONFIG.keys()),
+        index=3  # 默认选择沪深300
+    )
     
-    with col1:
-        # 指数选择
-        selected_index = st.selectbox(
-            "选择指数",
-            list(INDICES_CONFIG.keys()),
-            index=3  # 默认选择沪深300
-        )
-    
-    with col2:
-        # 计算按钮 - 添加垂直间距
-        st.write("")  # 添加空行来对齐
-        if st.button("计算指标", type="primary"):
-            st.session_state.calculate_clicked = True
-        else:
-            st.session_state.calculate_clicked = False
+    # 计算按钮 - 移到指数列表框下面
+    if st.button("计算指标", type="primary", use_container_width=True):
+        st.session_state.calculate_clicked = True
+    else:
+        st.session_state.calculate_clicked = False
     
     # 状态信息
     status_info = get_latest_data_info()

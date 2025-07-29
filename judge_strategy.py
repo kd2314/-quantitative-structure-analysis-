@@ -387,26 +387,27 @@ def plot_macd_system_new(df, stock_code):
     # 设置中文字体 - 改进字体兼容性
     import matplotlib.font_manager as fm
     
+    # 强制设置中文字体
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'Arial Unicode MS', 'DejaVu Sans']
+    plt.rcParams['axes.unicode_minus'] = False
+    
     # 尝试设置中文字体，按优先级尝试
     font_options = ['SimHei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'Arial Unicode MS', 'DejaVu Sans']
     font_found = False
     
     for font in font_options:
         try:
-            plt.rcParams['font.sans-serif'] = [font]
-            plt.rcParams['axes.unicode_minus'] = False
-            # 测试字体是否可用
             test_font = fm.FontProperties(family=font)
             if test_font.get_name() != 'DejaVu Sans':
                 font_found = True
+                selected_font = font
                 break
         except:
             continue
     
     # 如果没有找到中文字体，使用默认字体并添加字体回退
     if not font_found:
-        plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial Unicode MS']
-        plt.rcParams['axes.unicode_minus'] = False
+        selected_font = 'DejaVu Sans'
     
     # 设置暗色背景样式
     plt.style.use('dark_background')
@@ -425,7 +426,7 @@ def plot_macd_system_new(df, stock_code):
     # 绘制K线图
     ax1.plot(x_index, df['close'], label='收盘价', color='#00FF00', linewidth=1)
     ax1.set_title(f'股票代码 {stock_code} 修改后MACD指标系统', fontsize=12, color='white', 
-                  fontproperties=fm.FontProperties(family='SimHei' if 'SimHei' in font_options else 'DejaVu Sans'))
+                  fontproperties=fm.FontProperties(family=selected_font))
     
     # 设置x轴标签为日期，但只显示部分日期以避免重叠
     date_labels = df.index.strftime('%y-%m')
