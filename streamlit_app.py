@@ -58,6 +58,16 @@ st.markdown("""
     .sidebar .sidebar-content {
         background-color: #f8f9fa;
     }
+    
+    /* 修复按钮对齐问题 */
+    .stButton > button {
+        margin-top: 1.5rem;
+    }
+    
+    /* 确保selectbox和button在同一行对齐 */
+    .row-widget.stHorizontal {
+        align-items: end;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -98,7 +108,7 @@ def plot_macd_analysis_streamlit(df, stock_code, analysis_period):
     import matplotlib.font_manager as fm
     
     # 尝试设置中文字体，按优先级尝试
-    font_options = ['SimHei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'DejaVu Sans']
+    font_options = ['SimHei', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'DejaVu Sans', 'Arial Unicode MS']
     font_found = False
     
     for font in font_options:
@@ -113,9 +123,9 @@ def plot_macd_analysis_streamlit(df, stock_code, analysis_period):
         except:
             continue
     
-    # 如果没有找到中文字体，使用默认字体
+    # 如果没有找到中文字体，使用默认字体并添加字体回退
     if not font_found:
-        plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+        plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial Unicode MS']
         plt.rcParams['axes.unicode_minus'] = False
     
     # 创建图表
@@ -126,7 +136,7 @@ def plot_macd_analysis_streamlit(df, stock_code, analysis_period):
     
     # 绘制K线图
     ax1.plot(x_index, df['close'], label='收盘价', color='blue', linewidth=1)
-    ax1.set_title(f'{stock_code} 定量结构公式分析', fontsize=14)
+    ax1.set_title(f'{stock_code} 定量结构公式分析', fontsize=14, fontproperties=fm.FontProperties(family='SimHei' if 'SimHei' in font_options else 'DejaVu Sans'))
     
     # 添加买卖信号到价格图
     buy_signals = df[df['低位金叉'] | df['二次金叉']]
@@ -208,7 +218,7 @@ def main():
         )
     
     # 主内容区域
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([3, 1])
     
     with col1:
         # 指数选择
@@ -219,7 +229,8 @@ def main():
         )
     
     with col2:
-        # 计算按钮
+        # 计算按钮 - 添加垂直间距
+        st.write("")  # 添加空行来对齐
         if st.button("计算指标", type="primary"):
             st.session_state.calculate_clicked = True
         else:
@@ -297,35 +308,6 @@ def main():
                 change_pct = ((latest_close - prev_close) / prev_close) * 100
                 st.metric("收盘价", f"{latest_close:.2f}", f"{change_pct:+.2f}%")
             
-            # 显示最近的信号
-            st.subheader("最近信号分析")
-            
-            # 获取最近的数据
-            recent_data = df.tail(10)
-            
-            # 检查最近的买卖信号
-            buy_signals = recent_data[recent_data['低位金叉'] | recent_data['二次金叉']]
-            sell_signals = recent_data[recent_data['TG']]
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if not buy_signals.empty:
-                    st.success("最近买入信号:")
-                    for idx in buy_signals.index:
-                        signal_type = "低位金叉" if buy_signals.loc[idx, '低位金叉'] else "二次金叉"
-                        st.write(f"- {idx.strftime('%Y-%m-%d')}: {signal_type}")
-                else:
-                    st.info("最近无买入信号")
-            
-            with col2:
-                if not sell_signals.empty:
-                    st.error("最近卖出信号:")
-                    for idx in sell_signals.index:
-                        st.write(f"- {idx.strftime('%Y-%m-%d')}: 顶背离确认")
-                else:
-                    st.info("最近无卖出信号")
-            
             # 数据表格显示
             st.subheader("详细数据")
             
@@ -386,11 +368,57 @@ def main():
             with col2:
                 if st.button("保存Excel数据"):
                     try:
+                        # 确保有openpyxl依赖
+                        try:
+                            import openpyxl
+                        except ImportError:
+                            st.error("缺少openpyxl依赖，请运行: pip install openpyxl")
+                            return
+                        
                         excel_path = f'stock_{stock_code}_macd_analysis_new.xlsx'
-                        df[available_columns].to_excel(excel_path)
+                        
+                        # 选择要导出的列
+                        export_columns = [
+                            'close', 'DIF', 'DEA', 'MACD',
+                            '低位金叉', '二次金叉', 'TG', 'BG',
+                            '直接顶背离', '隔峰顶背离', '直接底背离', '隔峰底背离',
+                            '主升', 'DIF顶转折', 'DIF底转折'
+                        ]
+                        
+                        # 过滤存在的列
+                        available_export_columns = [col for col in export_columns if col in df.columns]
+                        
+                        # 创建要导出的数据框
+                        export_df = df[available_export_columns].copy()
+                        
+                        # 格式化数值列
+                        if 'close' in export_df.columns:
+                            export_df['close'] = export_df['close'].round(2)
+                        if 'DIF' in export_df.columns:
+                            export_df['DIF'] = export_df['DIF'].round(3)
+                        if 'DEA' in export_df.columns:
+                            export_df['DEA'] = export_df['DEA'].round(3)
+                        if 'MACD' in export_df.columns:
+                            export_df['MACD'] = export_df['MACD'].round(3)
+                        
+                        # 保存到Excel
+                        export_df.to_excel(excel_path, engine='openpyxl')
                         st.success(f"数据已保存为: {excel_path}")
+                        
+                        # 提供下载链接
+                        with open(excel_path, 'rb') as f:
+                            excel_data = f.read()
+                        
+                        st.download_button(
+                            label="下载Excel文件",
+                            data=excel_data,
+                            file_name=excel_path,
+                            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                        )
+                        
                     except Exception as e:
                         st.error(f"保存Excel时出错: {e}")
+                        st.error("请确保已安装openpyxl: pip install openpyxl")
         
         except Exception as e:
             st.error(f"计算过程中出现错误: {e}")
