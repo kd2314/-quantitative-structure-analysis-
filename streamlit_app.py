@@ -194,23 +194,23 @@ def main():
                 st.metric("收盘价", f"{latest_close:.2f}", f"{change_pct:+.2f}%")
             
             with col5:
-                # 显示TG值
+                # 显示顶结构值
                 tg_value = df['TG_数值'].iloc[-1] if 'TG_数值' in df.columns else 0
                 tg_color = "red" if tg_value == 1 else "gray"
                 st.markdown(f"""
                 <div style="text-align: center; padding: 10px; border: 2px solid {tg_color}; border-radius: 5px;">
-                    <div style="font-size: 14px; color: #666;">TG值</div>
+                    <div style="font-size: 14px; color: #666;">顶结构值</div>
                     <div style="font-size: 24px; font-weight: bold; color: {tg_color};">{tg_value}</div>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col6:
-                # 显示BG值
+                # 显示底结构值
                 bg_value = df['BG_数值'].iloc[-1] if 'BG_数值' in df.columns else 0
                 bg_color = "green" if bg_value == -1 else "gray"
                 st.markdown(f"""
                 <div style="text-align: center; padding: 10px; border: 2px solid {bg_color}; border-radius: 5px;">
-                    <div style="font-size: 14px; color: #666;">BG值</div>
+                    <div style="font-size: 14px; color: #666;">底结构值</div>
                     <div style="font-size: 24px; font-weight: bold; color: {bg_color};">{bg_value}</div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -249,6 +249,15 @@ def main():
                 formatted_df['DEA'] = formatted_df['DEA'].round(3)
             if 'MACD' in formatted_df.columns:
                 formatted_df['MACD'] = formatted_df['MACD'].round(3)
+            
+            # 重命名界面显示的列名
+            display_column_mapping = {
+                'TG': '顶结构',
+                'BG': '底结构',
+                'TG_数值': '顶结构_数值',
+                'BG_数值': '底结构_数值'
+            }
+            formatted_df = formatted_df.rename(columns=display_column_mapping)
             
             st.dataframe(formatted_df, use_container_width=True)
             
