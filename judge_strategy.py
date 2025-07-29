@@ -9,8 +9,8 @@ warnings.filterwarnings('ignore')
 def get_stock_data(stock_code):
     """获取股票数据"""
     try:
-        # 计算开始日期（一年前）
-        start_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+        # 设置开始日期为2020年1月1日
+        start_date = '2020-01-01'
         end_date = datetime.now().strftime('%Y-%m-%d')
         
         # 使用akshare获取指数数据
