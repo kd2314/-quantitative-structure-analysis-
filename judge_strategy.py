@@ -5,13 +5,16 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
+import pytz  # 需安装：pip install pytz
 
 def get_stock_data(stock_code):
     """获取股票数据"""
     try:
         # 设置开始日期为2020年1月1日
+        beijing_tz = pytz.timezone('Asia/Shanghai')
+        now = datetime.now(beijing_tz)
         start_date = '2020-01-01'
-        end_date = datetime.now().strftime('%Y-%m-%d')
+        end_date = now.strftime('%Y-%m-%d')
         
         # 使用akshare获取指数数据
         df = ak.stock_zh_index_daily(symbol=stock_code)
