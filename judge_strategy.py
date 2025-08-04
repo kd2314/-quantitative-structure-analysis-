@@ -306,12 +306,12 @@ def calculate_macd_indicators_new(df):
     df['B'] = df['直接底背离'] | df['隔峰底背离']
     
     # 修改后的顶底背离确认信号(TG和BG) - 基于DIF转折
-    df['直接TG'] = (df['DIF顶转折'] & df['直接顶背离'].shift(1) & (df['DIF'] > 0))
-    df['隔峰TG'] = (df['DIF顶转折'] & df['隔峰顶背离'].shift(1) & (df['DIF'] > 0))
+    df['直接TG'] = (df['DIF']<df['DIF4'] & df['直接顶背离'].shift(1) & (df['DIF'] > 0))
+    df['隔峰TG'] = (df['DIF']<df['DIF4'] & df['隔峰顶背离'].shift(1) & (df['DIF'] > 0))
     df['TG'] = df['直接TG'] | df['隔峰TG']
     
-    df['直接BG'] = (df['DIF底转折'] & df['直接底背离'].shift(1) & (df['DIF'] < 0))
-    df['隔峰BG'] = (df['DIF底转折'] & df['隔峰底背离'].shift(1) & (df['DIF'] < 0))
+    df['直接BG'] = (df['DIF']>df['DIF4'] & df['直接底背离'].shift(1) & (df['DIF'] < 0))
+    df['隔峰BG'] = (df['DIF']>df['DIF4'] & df['隔峰底背离'].shift(1) & (df['DIF'] < 0))
     df['BG'] = df['直接BG'] | df['隔峰BG']
     
     # 将TG和BG转换为数值：TG=True时为1，BG=True时为-1，其他为0
